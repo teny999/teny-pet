@@ -3,110 +3,75 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Teny.cc | 全球共养小宠物</title>
+    <title>Teny.cc | 全球共养</title>
     <style>
-        /* 极简主义黑白风格，契合 teny.cc 域名 */
-        :root { --bg: #ffffff; --text: #000000; --bar-bg: #eeeeee; }
+        :root { --bg: #ffffff; --text: #000000; }
         body { 
-            background: var(--bg); 
-            color: var(--text); 
-            font-family: -apple-system, system-ui, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; 
-            display: flex; 
-            flex-direction: column; 
-            align-items: center; 
-            justify-content: center; 
-            height: 100vh; 
-            margin: 0; 
-            user-select: none;
+            background: var(--bg); color: var(--text); 
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; 
+            display: flex; flex-direction: column; align-items: center; justify-content: center; 
+            height: 100vh; margin: 0; overflow: hidden;
         }
+        
+        /* 宠物区域 */
+        #pet-container { font-size: 100px; height: 180px; display: flex; align-items: center; transition: all 0.2s; cursor: pointer; }
+        #pet-container:active { transform: scale(0.9); }
 
-        /* 宠物形象区域 */
-        #pet-container { 
-            font-size: 100px; 
-            height: 160px; 
-            display: flex; 
-            align-items: center; 
-            justify-content: center; 
-            transition: transform 0.1s;
-        }
-
-        /* 状态条区域 */
-        .stats { width: 260px; margin-top: 20px; }
-        .bar-label { 
-            font-size: 11px; 
-            font-weight: 900; 
-            margin-bottom: 5px; 
-            display: flex; 
-            justify-content: space-between; 
-            letter-spacing: 1px;
-        }
-        .bar-bg { 
-            width: 100%; 
-            height: 6px; 
-            background: var(--bar-bg); 
-            border-radius: 3px; 
-            margin-bottom: 18px; 
-            overflow: hidden; 
-            border: 1px solid #000; 
-        }
-        .bar-fill { height: 100%; width: 0%; transition: width 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
-        #hunger-fill { background: #000; } /* 饥饿条 */
-        #happy-fill { background: #000; }  /* 心情条 */
+        /* 状态条 */
+        .stats { width: 260px; margin-top: 10px; }
+        .bar-label { font-size: 11px; font-weight: 900; margin-bottom: 5px; display: flex; justify-content: space-between; letter-spacing: 1px; }
+        .bar-bg { width: 100%; height: 6px; background: #eee; border: 1px solid #000; margin-bottom: 18px; overflow: hidden; }
+        .bar-fill { height: 100%; width: 0%; transition: width 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275); background: #000; }
 
         /* 交互按钮 */
-        .btns { display: flex; gap: 12px; margin-top: 20px; }
+        .btns { display: flex; gap: 12px; margin-top: 10px; }
         button { 
-            padding: 12px 24px; 
-            border: 2px solid #000; 
-            background: #fff; 
-            font-weight: bold; 
-            font-size: 14px;
-            cursor: pointer; 
-            box-shadow: 5px 5px 0px #000; 
-            outline: none; 
-            transition: 0.1s;
+            padding: 12px 24px; border: 2px solid #000; background: #fff; 
+            font-weight: bold; font-size: 14px; cursor: pointer; 
+            box-shadow: 5px 5px 0px #000; transition: 0.1s;
         }
-        button:active { 
-            transform: translate(3px, 3px); 
-            box-shadow: 2px 2px 0px #000; 
-        }
+        button:active { transform: translate(3px, 3px); box-shadow: 2px 2px 0px #000; }
 
-        /* 全球数据信息 */
-        .world-info { 
-            margin-top: 40px; 
-            font-size: 10px; 
-            letter-spacing: 2px; 
-            text-transform: uppercase; 
-            opacity: 0.4; 
+        /* 访客足迹：极简播报 */
+        #footprints { 
+            margin-top: 50px; width: 80%; max-width: 400px;
+            font-size: 11px; color: #888; text-align: center;
+            border-top: 1px solid #eee; padding-top: 20px;
+            letter-spacing: 0.5px;
         }
+        .log-item { animation: fadeIn 0.8s ease-in-out; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+        
+        .global-count { font-size: 10px; margin-top: 15px; opacity: 0.4; text-transform: uppercase; }
     </style>
 </head>
 <body>
 
-    <!-- 宠物表情 -->
-    <div id="pet-container">...</div>
+    <div id="pet-container">乁( ˙ ω ˙ )厂</div>
     
     <div class="stats">
-        <div class="bar-label"><span>HUNGER (饥饿度)</span><span id="h-val">0%</span></div>
+        <div class="bar-label"><span>HUNGER</span><span id="h-val">0%</span></div>
         <div class="bar-bg"><div id="hunger-fill" class="bar-fill"></div></div>
         
-        <div class="bar-label"><span>HAPPINESS (心情值)</span><span id="s-val">0%</span></div>
+        <div class="bar-label"><span>HAPPINESS</span><span id="s-val">0%</span></div>
         <div class="bar-bg"><div id="happy-fill" class="bar-fill"></div></div>
     </div>
 
     <div class="btns">
-        <button onclick="doAction('feed')">FEED (喂食)</button>
-        <button onclick="doAction('play')">PLAY (玩耍)</button>
+        <button onclick="doAction('feed')">FEED 🍖</button>
+        <button onclick="doAction('play')">PLAY 🧸</button>
     </div>
 
-    <div class="world-info">Worldwide Total Feeds: <span id="f-count">0</span></div>
+    <div id="footprints">
+        <div id="log-content">正在连接云端足迹...</div>
+        <div class="global-count">Total Feeds: <span id="f-count">0</span></div>
+    </div>
 
     <script type="module">
-        // 引入 Firebase 核心模块
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getDatabase, ref, onValue, runTransaction } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+        import { getDatabase, ref, onValue, runTransaction, push, serverTimestamp, query, limitToLast } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
 
-        // 使用你截图中的真实配置信息
+        // 你的 Firebase 配置
         const firebaseConfig = {
             apiKey: "AIzaSyAiXh3S17-11md-qWuWbE5qdjyof4BPAAI",
             authDomain: "teny-pet.firebaseapp.com",
@@ -114,60 +79,86 @@
             projectId: "teny-pet",
             storageBucket: "teny-pet.appspot.com",
             messagingSenderId: "847020832526",
-            appId: "1:847020832526:web:7576dc46cc24f062bb495f",
-            measurementId: "G-43P2VQZ3GD"
+            appId: "1:847020832526:web:7576dc46cc24f062bb495f"
         };
 
-        // 初始化
         const app = initializeApp(firebaseConfig);
         const db = getDatabase(app);
         const petRef = ref(db, 'global_pet');
+        const logRef = ref(db, 'logs');
 
-        // 监听云端实时数据变化
+        // 1. 监听宠物状态变化
         onValue(petRef, (snapshot) => {
             const data = snapshot.val() || { h: 50, s: 50, f: 0 };
             
-            // 更新 UI
+            // 更新数值和进度条
             document.getElementById('hunger-fill').style.width = data.h + '%';
             document.getElementById('happy-fill').style.width = data.s + '%';
             document.getElementById('h-val').innerText = Math.floor(data.h) + '%';
             document.getElementById('s-val').innerText = Math.floor(data.s) + '%';
-            document.getElementById('f-count').innerText = data.f;
+            document.getElementById('f-count').innerText = data.f || 0;
             
-            // 根据状态变换表情
-            let emoji = "乁( ˙ ω ˙ )厂"; // 正常
-            if (data.h > 80) emoji = "(つд⊂)"; // 太饿了
-            if (data.s < 20) emoji = "(╯︵╰)"; // 不开心
-            if (data.h >= 100) emoji = "(X_X)"; // 寄了
-            
+            // 纯粹基于状态的表情变化
+            let emoji = "乁( ˙ ω ˙ )厂";
+            if (data.h > 80) emoji = "(つд⊂)"; 
+            if (data.s < 20) emoji = "(╯︵╰)";
+            if (data.h >= 100) emoji = "(X_X)";
             document.getElementById('pet-container').innerText = emoji;
         });
 
-        // 互动逻辑（通过事务处理防止多人冲突）
-        window.doAction = (type) => {
-            runTransaction(petRef, (currentData) => {
-                if (!currentData) currentData = { h: 50, s: 50, f: 0 };
-                
+        // 2. 监听访客足迹 (实时显示最后一条)
+        const recentLogQuery = query(logRef, limitToLast(1));
+        onValue(recentLogQuery, (snapshot) => {
+            snapshot.forEach((child) => {
+                const log = child.val();
+                const time = new Date(log.t).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+                document.getElementById('log-content').innerHTML = `
+                    <div class="log-item">
+                        📍 <strong>${log.loc}</strong> 的网友在 ${time} ${log.act}了它
+                    </div>`;
+            });
+        });
+
+        // 3. 互动逻辑
+        window.doAction = async (type) => {
+            // 获取访客位置
+            let location = "互联网某处";
+            try {
+                const res = await fetch('https://ipapi.co/json/');
+                const cityData = await res.json();
+                location = cityData.city || cityData.country_name || "未知位置";
+            } catch (e) { console.error("Location error"); }
+
+            // 同步宠物状态
+            runTransaction(petRef, (curr) => {
+                if (!curr) curr = { h: 50, s: 50, f: 0 };
                 if (type === 'feed') {
-                    currentData.h = Math.max(0, currentData.h - 15); // 减少饥饿
-                    currentData.f = (currentData.f || 0) + 1;       // 增加全球喂食总数
-                } else if (type === 'play') {
-                    currentData.s = Math.min(100, currentData.s + 15); // 增加快乐
+                    curr.h = Math.max(0, curr.h - 12);
+                    curr.f = (curr.f || 0) + 1;
+                } else {
+                    curr.s = Math.min(100, curr.s + 12);
                 }
-                return currentData;
+                return curr;
+            });
+
+            // 记录足迹
+            push(logRef, {
+                loc: location,
+                act: type === 'feed' ? '喂食' : '玩耍',
+                t: serverTimestamp()
             });
         };
 
-        // 模拟时间流逝（每 20 秒自动消耗一点数值）
+        // 4. 自动衰减逻辑 (每15秒消耗一次)
         setInterval(() => {
-            runTransaction(petRef, (currentData) => {
-                if (currentData) {
-                    currentData.h = Math.min(100, currentData.h + 1); // 慢慢变饿
-                    currentData.s = Math.max(0, currentData.s - 1);   // 慢慢变无聊
+            runTransaction(petRef, (curr) => {
+                if (curr) {
+                    curr.h = Math.min(100, (curr.h || 0) + 0.5);
+                    curr.s = Math.max(0, (curr.s || 0) - 0.4);
                 }
-                return currentData;
+                return curr;
             });
-        }, 20000);
+        }, 15000);
     </script>
 </body>
 </html>
