@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Teny.cc | 全球共养</title>
+    <title>Teny.cc | 极简全球共养宠物</title>
     <style>
         :root { --bg: #ffffff; --text: #000000; }
         body { 
@@ -13,36 +13,36 @@
             height: 100vh; margin: 0; overflow: hidden;
         }
         
-        /* 宠物区域 */
+        /* 宠物形象 */
         #pet-container { font-size: 100px; height: 180px; display: flex; align-items: center; transition: all 0.2s; cursor: pointer; }
         #pet-container:active { transform: scale(0.9); }
 
-        /* 状态条 */
+        /* 状态条样式 */
         .stats { width: 260px; margin-top: 10px; }
         .bar-label { font-size: 11px; font-weight: 900; margin-bottom: 5px; display: flex; justify-content: space-between; letter-spacing: 1px; }
         .bar-bg { width: 100%; height: 6px; background: #eee; border: 1px solid #000; margin-bottom: 18px; overflow: hidden; }
         .bar-fill { height: 100%; width: 0%; transition: width 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275); background: #000; }
 
-        /* 交互按钮 */
-        .btns { display: flex; gap: 12px; margin-top: 10px; }
+        /* 按钮 */
+        .btns { display: flex; gap: 15px; margin-top: 10px; }
         button { 
             padding: 12px 24px; border: 2px solid #000; background: #fff; 
             font-weight: bold; font-size: 14px; cursor: pointer; 
-            box-shadow: 5px 5px 0px #000; transition: 0.1s;
+            box-shadow: 5px 5px 0px #000; transition: 0.1s; outline: none;
         }
         button:active { transform: translate(3px, 3px); box-shadow: 2px 2px 0px #000; }
 
-        /* 访客足迹：极简播报 */
+        /* 底部足迹播报 */
         #footprints { 
-            margin-top: 50px; width: 80%; max-width: 400px;
+            margin-top: 50px; width: 85%; max-width: 450px;
             font-size: 11px; color: #888; text-align: center;
-            border-top: 1px solid #eee; padding-top: 20px;
+            border-top: 1px solid #eee; padding-top: 25px;
             letter-spacing: 0.5px;
         }
         .log-item { animation: fadeIn 0.8s ease-in-out; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
         
-        .global-count { font-size: 10px; margin-top: 15px; opacity: 0.4; text-transform: uppercase; }
+        .global-count { font-size: 10px; margin-top: 15px; opacity: 0.4; text-transform: uppercase; letter-spacing: 2px; }
     </style>
 </head>
 <body>
@@ -50,10 +50,10 @@
     <div id="pet-container">乁( ˙ ω ˙ )厂</div>
     
     <div class="stats">
-        <div class="bar-label"><span>HUNGER</span><span id="h-val">0%</span></div>
+        <div class="bar-label"><span>HUNGER</span><span id="h-val">--%</span></div>
         <div class="bar-bg"><div id="hunger-fill" class="bar-fill"></div></div>
         
-        <div class="bar-label"><span>HAPPINESS</span><span id="s-val">0%</span></div>
+        <div class="bar-label"><span>HAPPINESS</span><span id="s-val">--%</span></div>
         <div class="bar-bg"><div id="happy-fill" class="bar-fill"></div></div>
     </div>
 
@@ -63,15 +63,15 @@
     </div>
 
     <div id="footprints">
-        <div id="log-content">正在连接云端足迹...</div>
-        <div class="global-count">Total Feeds: <span id="f-count">0</span></div>
+        <div id="log-content">正在同步全球足迹...</div>
+        <div class="global-count">Worldwide Total Feeds: <span id="f-count">0</span></div>
     </div>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import { getDatabase, ref, onValue, runTransaction, push, serverTimestamp, query, limitToLast } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
 
-        // 你的 Firebase 配置
+        // --- Firebase 配置 ---
         const firebaseConfig = {
             apiKey: "AIzaSyAiXh3S17-11md-qWuWbE5qdjyof4BPAAI",
             authDomain: "teny-pet.firebaseapp.com",
@@ -87,18 +87,48 @@
         const petRef = ref(db, 'global_pet');
         const logRef = ref(db, 'logs');
 
-        // 1. 监听宠物状态变化
+        // --- 电子音效合成器 ---
+        let audioCtx;
+        function initAudio() {
+            if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        }
+
+        function playSound(type) {
+            initAudio();
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+
+            const now = audioCtx.currentTime;
+            if (type === 'feed') {
+                // 喂食：清脆的吞咽声
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(500, now);
+                osc.frequency.exponentialRampToValueAtTime(100, now + 0.2);
+                gain.gain.setValueAtTime(0.2, now);
+                gain.gain.exponentialRampToValueAtTime(0.01, now + 0.2);
+                osc.start(); osc.stop(now + 0.2);
+            } else {
+                // 玩耍：欢快的蹦跳声
+                osc.type = 'triangle';
+                osc.frequency.setValueAtTime(200, now);
+                osc.frequency.exponentialRampToValueAtTime(700, now + 0.15);
+                gain.gain.setValueAtTime(0.2, now);
+                gain.gain.exponentialRampToValueAtTime(0.01, now + 0.15);
+                osc.start(); osc.stop(now + 0.15);
+            }
+        }
+
+        // --- 实时监听：宠物状态 ---
         onValue(petRef, (snapshot) => {
             const data = snapshot.val() || { h: 50, s: 50, f: 0 };
-            
-            // 更新数值和进度条
             document.getElementById('hunger-fill').style.width = data.h + '%';
             document.getElementById('happy-fill').style.width = data.s + '%';
             document.getElementById('h-val').innerText = Math.floor(data.h) + '%';
             document.getElementById('s-val').innerText = Math.floor(data.s) + '%';
             document.getElementById('f-count').innerText = data.f || 0;
             
-            // 纯粹基于状态的表情变化
             let emoji = "乁( ˙ ω ˙ )厂";
             if (data.h > 80) emoji = "(つд⊂)"; 
             if (data.s < 20) emoji = "(╯︵╰)";
@@ -106,7 +136,7 @@
             document.getElementById('pet-container').innerText = emoji;
         });
 
-        // 2. 监听访客足迹 (实时显示最后一条)
+        // --- 实时监听：最后一条足迹 ---
         const recentLogQuery = query(logRef, limitToLast(1));
         onValue(recentLogQuery, (snapshot) => {
             snapshot.forEach((child) => {
@@ -114,22 +144,25 @@
                 const time = new Date(log.t).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
                 document.getElementById('log-content').innerHTML = `
                     <div class="log-item">
-                        📍 <strong>${log.loc}</strong> 的网友在 ${time} ${log.act}了它
+                        📍 来自 <strong>${log.loc}</strong> 的网友 ${time} ${log.act}了 Teny
                     </div>`;
             });
         });
 
-        // 3. 互动逻辑
+        // --- 核心交互逻辑 ---
         window.doAction = async (type) => {
-            // 获取访客位置
+            // 1. 触发声音
+            try { playSound(type); } catch(e) {}
+
+            // 2. 获取地理位置
             let location = "互联网某处";
             try {
                 const res = await fetch('https://ipapi.co/json/');
                 const cityData = await res.json();
                 location = cityData.city || cityData.country_name || "未知位置";
-            } catch (e) { console.error("Location error"); }
+            } catch (e) { console.log("Location fetch skipped"); }
 
-            // 同步宠物状态
+            // 3. 更新 Firebase 宠物状态
             runTransaction(petRef, (curr) => {
                 if (!curr) curr = { h: 50, s: 50, f: 0 };
                 if (type === 'feed') {
@@ -141,7 +174,7 @@
                 return curr;
             });
 
-            // 记录足迹
+            // 4. 写入足迹日志
             push(logRef, {
                 loc: location,
                 act: type === 'feed' ? '喂食' : '玩耍',
@@ -149,12 +182,12 @@
             });
         };
 
-        // 4. 自动衰减逻辑 (每15秒消耗一次)
+        // --- 自动衰减：模拟时间流逝 ---
         setInterval(() => {
             runTransaction(petRef, (curr) => {
                 if (curr) {
-                    curr.h = Math.min(100, (curr.h || 0) + 0.5);
-                    curr.s = Math.max(0, (curr.s || 0) - 0.4);
+                    curr.h = Math.min(100, (curr.h || 0) + 0.4);
+                    curr.s = Math.max(0, (curr.s || 0) - 0.3);
                 }
                 return curr;
             });
