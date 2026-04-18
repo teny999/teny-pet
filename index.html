@@ -2,104 +2,170 @@
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
-    
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    
-    <title>手机端宠物展示（防歪防乱码版）</title>
-    
+    <title>Teny 2.0 | 暖心陪伴版</title>
     <style>
-        /* CSS 样式：解决布局歪了 */
+        /* 采用奶油色系，保护眼睛，更有活力 */
+        :root { --bg: #FFF9E3; --text: #4A4A4A; --bar-bg: #E0DCC8; }
+        body { 
+            background: var(--bg); color: var(--text); 
+            font-family: "PingFang SC", "Microsoft YaHei", sans-serif;
+            display: flex; flex-direction: column; align-items: center; justify-content: center; 
+            height: 100vh; margin: 0; padding: 0 20px; box-sizing: border-box; overflow: hidden;
+        }
         
-        body {
-            margin: 0;
-            padding: 10px;
-            background-color: #f0f0f0;
-            /* 字体设置，防止手机端文字大小失控 */
-            font-family: -apple-system, Helvetica, sans-serif;
+        /* 呼吸动画：让宠物看起来是活的 */
+        @keyframes breathe {
+            0%, 100% { transform: translateY(0) scale(1); }
+            50% { transform: translateY(-10px) scale(1.05); }
         }
 
-        /* 宠物列表容器 */
-        .pet-list {
-            display: flex;
-            flex-wrap: wrap; /* 允许换行 */
-            justify-content: space-between; /* 两端对齐，中间留空 */
-            padding: 0;
-            margin: 0;
-            list-style: none;
+        #pet-container { 
+            font-size: 100px; height: 160px; 
+            display: flex; align-items: center; justify-content: center;
+            animation: breathe 3s infinite ease-in-out;
+            user-select: none; -webkit-tap-highlight-color: transparent;
+            cursor: pointer;
         }
 
-        /* 每个宠物卡片：手机端一行排两个 */
-        .pet-card {
-            /* 关键：宽度设置为将近一半，留一点空隙 */
-            width: 48%; 
-            background-color: white;
-            margin-bottom: 15px; /* 下方间距 */
-            border-radius: 8px;
-            overflow: hidden; /* 边框切齐 */
-            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-            box-sizing: border-box; /* 防止 padding 撑破布局 */
-        }
+        /* 状态面板 */
+        .stats { width: 100%; max-width: 280px; margin-top: 10px; }
+        .bar-label { font-size: 13px; font-weight: bold; margin-bottom: 6px; display: flex; justify-content: space-between; color: #8C8465; }
+        .bar-bg { width: 100%; height: 14px; background: var(--bar-bg); border-radius: 10px; margin-bottom: 15px; overflow: hidden; border: 2px solid #4A4A4A; }
+        .bar-fill { height: 100%; width: 0%; transition: width 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275); border-radius: 10px; }
+        #h-fill { background: #FFAB76; } /* 橙色代表饱腹感 */
+        #s-fill { background: #FFD93D; } /* 黄色代表快乐值 */
 
-        /* 宠物图片容器：强制正方形 */
-        .pet-img-wrap {
-            width: 100%;
-            height: 0;
-            padding-top: 100%; /* 1:1 比例 */
-            position: relative;
-            background-color: #e0e0e0; /* 加载前占位色 */
+        /* 互动按钮 */
+        .btns { display: flex; gap: 20px; margin-top: 15px; width: 100%; justify-content: center; }
+        button { 
+            flex: 0 1 130px; padding: 15px 0; border: 2px solid #4A4A4A; 
+            background: #FF8E8E; color: white; border-radius: 50px;
+            font-weight: bold; font-size: 18px; cursor: pointer; 
+            box-shadow: 0 6px 0 #4A4A4A; transition: 0.1s; outline: none;
         }
+        button.play-btn { background: #6BCB77; box-shadow: 0 6px 0 #4A4A4A; }
+        button:active { transform: translateY(4px); box-shadow: 0 2px 0 #4A4A4A; }
 
-        /* 宠物图片自身样式：防歪核心 */
-        .pet-img-wrap img {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            /* 【防歪核心】自动裁剪填充，不拉伸，不变形 */
-            object-fit: cover; 
-        }
-
-        /* 宠物名字文字：防乱码 */
-        .pet-name {
-            padding: 8px;
-            margin: 0;
-            font-size: 14px;
-            text-align: center;
-            color: #333;
-            /* 防止名字过长撑歪布局，超出会显示省略号 */
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-        }
+        /* 底部信息 */
+        .tips { margin-top: 40px; font-size: 12px; color: #A8A28E; text-align: center; line-height: 1.6; }
+        #log-content { font-weight: bold; color: #666; margin-bottom: 5px; height: 18px; }
     </style>
 </head>
 <body>
 
-    <h3 style="text-align:center;">我的可爱宠物</h3>
+    <div id="pet-container"> (๑>◡<๑) </div>
+    
+    <div class="stats">
+        <div class="bar-label"><span>肚子饱饱度</span><span id="h-val">--%</span></div>
+        <div class="bar-bg"><div id="h-fill" class="bar-fill"></div></div>
+        
+        <div class="bar-label"><span>开心能量</span><span id="s-val">--%</span></div>
+        <div class="bar-bg"><div id="s-fill" class="bar-fill"></div></div>
+    </div>
 
-    <ul class="pet-list">
-        <li class="pet-card">
-            <div class="pet-img-wrap">
-                <img src="https://images.unsplash.com/photo-1514888286974-6c03e2ca1dba?q=80&w=400" alt="宠物图">
-            </div>
-            <p class="pet-name">可爱咪咪</p>
-        </li>
+    <div class="btns">
+        <button onclick="doAction('feed')">喂肉肉 🍖</button>
+        <button class="play-btn" onclick="doAction('play')">陪它玩 🧸</button>
+    </div>
 
-        <li class="pet-card">
-            <div class="pet-img-wrap">
-                <img src="https://images.unsplash.com/photo-1583337130417-3346a1be7ded?q=80&w=400" alt="宠物图">
-            </div>
-            <p class="pet-name">贪吃旺财</p>
-        </li>
+    <div class="tips">
+        <div id="log-content">连接中...</div>
+        <div id="status-text" style="font-size: 10px; opacity: 0.7;">全球小朋友累计喂食：<span id="f-count">0</span> 次</div>
+    </div>
 
-        <li class="pet-card">
-            <div class="pet-img-wrap">
-                <img src="https://images.unsplash.com/photo-1592194996308-7b43878e84a6?q=80&w=400" alt="宠物图">
-            </div>
-            <p class="pet-name">高冷Pocky</p>
-        </li>
-    </ul>
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { getDatabase, ref, onValue, runTransaction, push, serverTimestamp, query, limitToLast } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
 
+        const firebaseConfig = {
+            apiKey: "AIzaSyAiXh3S17-11md-qWuWbE5qdjyof4BPAAI",
+            authDomain: "teny-pet.firebaseapp.com",
+            databaseURL: "https://teny-pet-default-rtdb.asia-southeast1.firebasedatabase.app",
+            projectId: "teny-pet",
+            appId: "1:847020832526:web:7576dc46cc24f062bb495f"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getDatabase(app);
+        const petRef = ref(db, 'kids_pet'); 
+        const logRef = ref(db, 'kids_logs');
+
+        // --- 声音系统 ---
+        let audioCtx;
+        function playSound(type) {
+            if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.connect(gain); gain.connect(audioCtx.destination);
+            const now = audioCtx.currentTime;
+            if (type === 'feed') {
+                osc.type = 'sine'; osc.frequency.setValueAtTime(600, now);
+                osc.frequency.exponentialRampToValueAtTime(200, now + 0.2);
+            } else {
+                osc.type = 'triangle'; osc.frequency.setValueAtTime(300, now);
+                osc.frequency.exponentialRampToValueAtTime(800, now + 0.15);
+            }
+            gain.gain.setValueAtTime(0.2, now);
+            gain.gain.exponentialRampToValueAtTime(0.01, now + 0.2);
+            osc.start(); osc.stop(now + 0.2);
+        }
+
+        // --- 表情逻辑（含昼夜） ---
+        function getPetEmoji(data) {
+            const hour = new Date().getHours();
+            if (hour >= 21 || hour < 7) return "(∪｡∪)｡｡｡zzz"; 
+            if (data.h > 80) return " ( > < ) "; 
+            if (data.s < 30) return " ( •̯́ ₃ •̯̀) "; 
+            return " (๑>◡<๑) "; 
+        }
+
+        // --- 数据监听 ---
+        onValue(petRef, (snapshot) => {
+            const data = snapshot.val() || { h: 50, s: 50, f: 0 };
+            document.getElementById('h-fill').style.width = (100 - data.h) + '%';
+            document.getElementById('s-fill').style.width = data.s + '%';
+            document.getElementById('h-val').innerText = Math.floor(100 - data.h) + '%';
+            document.getElementById('s-val').innerText = Math.floor(data.s) + '%';
+            document.getElementById('f-count').innerText = data.f || 0;
+            document.getElementById('pet-container').innerText = getPetEmoji(data);
+        });
+
+        // 监听足迹
+        const recentLogQuery = query(logRef, limitToLast(1));
+        onValue(recentLogQuery, (snapshot) => {
+            snapshot.forEach((child) => {
+                const log = child.val();
+                document.getElementById('log-content').innerText = `📍 来自 ${log.loc} 的朋友刚刚照顾了它`;
+            });
+        });
+
+        // --- 交互按钮 ---
+        window.doAction = async (type) => {
+            playSound(type);
+            let location = "互联网某处";
+            try {
+                const res = await fetch('https://ipapi.co/json/');
+                const cityData = await res.json();
+                location = cityData.city || "神秘城市";
+            } catch (e) {}
+
+            runTransaction(petRef, (curr) => {
+                if (!curr) curr = { h: 50, s: 50, f: 0 };
+                if (type === 'feed') { curr.h = Math.max(0, curr.h - 15); curr.f++; }
+                else { curr.s = Math.min(100, curr.s + 15); }
+                return curr;
+            });
+            push(logRef, { loc: location, act: type, t: serverTimestamp() });
+        };
+
+        // 自动衰减
+        setInterval(() => {
+            runTransaction(petRef, (curr) => {
+                if (curr) { curr.h = Math.min(100, curr.h + 0.3); curr.s = Math.max(0, curr.s - 0.2); }
+                return curr;
+            });
+        }, 30000);
+    </script>
 </body>
 </html>
