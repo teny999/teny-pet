@@ -5,51 +5,53 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Teny 2.0 | 暖心陪伴版</title>
     <style>
-        /* 采用奶油色系，保护眼睛，更有活力 */
         :root { --bg: #FFF9E3; --text: #4A4A4A; --bar-bg: #E0DCC8; }
         body { 
             background: var(--bg); color: var(--text); 
-            font-family: "PingFang SC", "Microsoft YaHei", sans-serif;
+            font-family: "PingFang SC", "Helvetica Neue", Helvetica, Arial, sans-serif;
             display: flex; flex-direction: column; align-items: center; justify-content: center; 
-            height: 100vh; margin: 0; padding: 0 20px; box-sizing: border-box; overflow: hidden;
+            height: 100vh; margin: 0; padding: 0 15px; box-sizing: border-box; overflow: hidden;
         }
         
-        /* 呼吸动画：让宠物看起来是活的 */
         @keyframes breathe {
             0%, 100% { transform: translateY(0) scale(1); }
-            50% { transform: translateY(-10px) scale(1.05); }
+            50% { transform: translateY(-10px) scale(1.02); }
         }
 
+        /* 修复重点：限制最大宽度，防止字符溢出换行 */
         #pet-container { 
-            font-size: 100px; height: 160px; 
+            font-size: 15vw; /* 随屏幕宽度自动缩小 */
+            max-font-size: 80px;
+            height: 140px; 
             display: flex; align-items: center; justify-content: center;
             animation: breathe 3s infinite ease-in-out;
-            user-select: none; -webkit-tap-highlight-color: transparent;
-            cursor: pointer;
+            user-select: none;
+            white-space: nowrap; /* 强制不换行 */
+            letter-spacing: -2px; /* 稍微缩紧字符间距 */
         }
+        /* 电脑端字体限制 */
+        @media (min-width: 600px) { #pet-container { font-size: 85px; } }
 
-        /* 状态面板 */
-        .stats { width: 100%; max-width: 280px; margin-top: 10px; }
-        .bar-label { font-size: 13px; font-weight: bold; margin-bottom: 6px; display: flex; justify-content: space-between; color: #8C8465; }
-        .bar-bg { width: 100%; height: 14px; background: var(--bar-bg); border-radius: 10px; margin-bottom: 15px; overflow: hidden; border: 2px solid #4A4A4A; }
-        .bar-fill { height: 100%; width: 0%; transition: width 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275); border-radius: 10px; }
-        #h-fill { background: #FFAB76; } /* 橙色代表饱腹感 */
-        #s-fill { background: #FFD93D; } /* 黄色代表快乐值 */
+        .stats { width: 100%; max-width: 280px; margin-top: 5px; }
+        .bar-label { font-size: 12px; font-weight: bold; margin-bottom: 5px; display: flex; justify-content: space-between; color: #8C8465; }
+        .bar-bg { width: 100%; height: 14px; background: var(--bar-bg); border-radius: 20px; margin-bottom: 12px; overflow: hidden; border: 2px solid #4A4A4A; position: relative; }
+        .bar-fill { height: 100%; width: 0%; transition: width 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275); border-radius: 20px; }
+        #h-fill { background: #FFAB76; }
+        #s-fill { background: #FFD93D; }
 
-        /* 互动按钮 */
-        .btns { display: flex; gap: 20px; margin-top: 15px; width: 100%; justify-content: center; }
+        .btns { display: flex; gap: 15px; margin-top: 10px; width: 100%; justify-content: center; }
         button { 
-            flex: 0 1 130px; padding: 15px 0; border: 2px solid #4A4A4A; 
+            flex: 0 1 120px; padding: 12px 0; border: 2px solid #4A4A4A; 
             background: #FF8E8E; color: white; border-radius: 50px;
-            font-weight: bold; font-size: 18px; cursor: pointer; 
-            box-shadow: 0 6px 0 #4A4A4A; transition: 0.1s; outline: none;
+            font-weight: bold; font-size: 16px; cursor: pointer; 
+            box-shadow: 0 5px 0 #4A4A4A; transition: 0.1s; outline: none;
+            -webkit-tap-highlight-color: transparent;
         }
-        button.play-btn { background: #6BCB77; box-shadow: 0 6px 0 #4A4A4A; }
-        button:active { transform: translateY(4px); box-shadow: 0 2px 0 #4A4A4A; }
+        button.play-btn { background: #6BCB77; }
+        button:active { transform: translateY(3px); box-shadow: 0 2px 0 #4A4A4A; }
 
-        /* 底部信息 */
-        .tips { margin-top: 40px; font-size: 12px; color: #A8A28E; text-align: center; line-height: 1.6; }
-        #log-content { font-weight: bold; color: #666; margin-bottom: 5px; height: 18px; }
+        .tips { margin-top: 30px; font-size: 11px; color: #A8A28E; text-align: center; width: 100%; }
+        #log-content { font-weight: bold; color: #666; margin-bottom: 4px; display: block; height: 16px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
     </style>
 </head>
 <body>
@@ -71,7 +73,7 @@
 
     <div class="tips">
         <div id="log-content">连接中...</div>
-        <div id="status-text" style="font-size: 10px; opacity: 0.7;">全球小朋友累计喂食：<span id="f-count">0</span> 次</div>
+        <div style="font-size: 9px; opacity: 0.7;">全球累计喂食：<span id="f-count">0</span> 次</div>
     </div>
 
     <script type="module">
@@ -91,7 +93,6 @@
         const petRef = ref(db, 'kids_pet'); 
         const logRef = ref(db, 'kids_logs');
 
-        // --- 声音系统 ---
         let audioCtx;
         function playSound(type) {
             if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
@@ -106,21 +107,19 @@
                 osc.type = 'triangle'; osc.frequency.setValueAtTime(300, now);
                 osc.frequency.exponentialRampToValueAtTime(800, now + 0.15);
             }
-            gain.gain.setValueAtTime(0.2, now);
+            gain.gain.setValueAtTime(0.15, now);
             gain.gain.exponentialRampToValueAtTime(0.01, now + 0.2);
             osc.start(); osc.stop(now + 0.2);
         }
 
-        // --- 表情逻辑（含昼夜） ---
         function getPetEmoji(data) {
             const hour = new Date().getHours();
             if (hour >= 21 || hour < 7) return "(∪｡∪)｡｡｡zzz"; 
-            if (data.h > 80) return " ( > < ) "; 
-            if (data.s < 30) return " ( •̯́ ₃ •̯̀) "; 
-            return " (๑>◡<๑) "; 
+            if (data.h > 80) return "(๑>﹏<๑)"; // 稍微改短一点，防止溢出
+            if (data.s < 30) return "(•̯́ ₃ •̯̀)"; 
+            return "(๑>◡<๑)"; 
         }
 
-        // --- 数据监听 ---
         onValue(petRef, (snapshot) => {
             const data = snapshot.val() || { h: 50, s: 50, f: 0 };
             document.getElementById('h-fill').style.width = (100 - data.h) + '%';
@@ -131,18 +130,16 @@
             document.getElementById('pet-container').innerText = getPetEmoji(data);
         });
 
-        // 监听足迹
         const recentLogQuery = query(logRef, limitToLast(1));
         onValue(recentLogQuery, (snapshot) => {
             snapshot.forEach((child) => {
                 const log = child.val();
-                document.getElementById('log-content').innerText = `📍 来自 ${log.loc} 的朋友刚刚照顾了它`;
+                document.getElementById('log-content').innerText = `📍 来自 ${log.loc} 的朋友照顾了它`;
             });
         });
 
-        // --- 交互按钮 ---
         window.doAction = async (type) => {
-            playSound(type);
+            try { playSound(type); } catch(e) {}
             let location = "互联网某处";
             try {
                 const res = await fetch('https://ipapi.co/json/');
@@ -159,7 +156,6 @@
             push(logRef, { loc: location, act: type, t: serverTimestamp() });
         };
 
-        // 自动衰减
         setInterval(() => {
             runTransaction(petRef, (curr) => {
                 if (curr) { curr.h = Math.min(100, curr.h + 0.3); curr.s = Math.max(0, curr.s - 0.2); }
