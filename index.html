@@ -3,34 +3,37 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Teny 2.0 | 暖心陪伴版</title>
+    <title>Teny 2.5 | 魔法互动版</title>
     <style>
-        :root { --bg: #FFF9E3; --text: #4A4A4A; --bar-bg: #E0DCC8; }
+        :root { --bg: #FFF9E3; --text: #4A4A4A; --bar-bg: #E0DCC8; --accent: #FF8E8E; }
         body { 
             background: var(--bg); color: var(--text); 
-            font-family: "PingFang SC", "Helvetica Neue", Helvetica, Arial, sans-serif;
+            font-family: "PingFang SC", sans-serif;
             display: flex; flex-direction: column; align-items: center; justify-content: center; 
             height: 100vh; margin: 0; padding: 0 15px; box-sizing: border-box; overflow: hidden;
+            transition: background 0.5s ease; /* 背景变色平滑过渡 */
         }
         
+        /* 基础呼吸动画 */
         @keyframes breathe {
             0%, 100% { transform: translateY(0) scale(1); }
             50% { transform: translateY(-10px) scale(1.02); }
         }
+        /* 点击后的跳动动画 */
+        @keyframes bounce {
+            0%, 100% { transform: scale(1); }
+            30% { transform: scale(0.9) translateY(10px); }
+            60% { transform: scale(1.2) translateY(-30px); }
+        }
 
-        /* 修复重点：限制最大宽度，防止字符溢出换行 */
         #pet-container { 
-            font-size: 15vw; /* 随屏幕宽度自动缩小 */
-            max-font-size: 80px;
-            height: 140px; 
+            font-size: 15vw; height: 140px; 
             display: flex; align-items: center; justify-content: center;
             animation: breathe 3s infinite ease-in-out;
-            user-select: none;
-            white-space: nowrap; /* 强制不换行 */
-            letter-spacing: -2px; /* 稍微缩紧字符间距 */
+            user-select: none; white-space: nowrap; cursor: pointer;
+            -webkit-tap-highlight-color: transparent;
         }
-        /* 电脑端字体限制 */
-        @media (min-width: 600px) { #pet-container { font-size: 85px; } }
+        #pet-container.active { animation: bounce 0.5s ease; }
 
         .stats { width: 100%; max-width: 280px; margin-top: 5px; }
         .bar-label { font-size: 12px; font-weight: bold; margin-bottom: 5px; display: flex; justify-content: space-between; color: #8C8465; }
@@ -42,26 +45,33 @@
         .btns { display: flex; gap: 15px; margin-top: 10px; width: 100%; justify-content: center; }
         button { 
             flex: 0 1 120px; padding: 12px 0; border: 2px solid #4A4A4A; 
-            background: #FF8E8E; color: white; border-radius: 50px;
+            background: var(--accent); color: white; border-radius: 50px;
             font-weight: bold; font-size: 16px; cursor: pointer; 
             box-shadow: 0 5px 0 #4A4A4A; transition: 0.1s; outline: none;
-            -webkit-tap-highlight-color: transparent;
         }
         button.play-btn { background: #6BCB77; }
         button:active { transform: translateY(3px); box-shadow: 0 2px 0 #4A4A4A; }
 
-        .tips { margin-top: 30px; font-size: 11px; color: #A8A28E; text-align: center; width: 100%; }
-        #log-content { font-weight: bold; color: #666; margin-bottom: 4px; display: block; height: 16px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .tips { margin-top: 25px; font-size: 11px; color: #A8A28E; text-align: center; min-height: 50px; }
+        #msg-bubble { 
+            background: white; border: 2px solid #4A4A4A; padding: 5px 10px; border-radius: 10px;
+            display: none; margin-bottom: 10px; position: relative; animation: fadeIn 0.3s;
+        }
+        #msg-bubble::after { content: ''; position: absolute; bottom: -10px; left: 50%; transform: translateX(-50%); border-width: 10px 10px 0; border-style: solid; border-color: white transparent; }
+        #msg-bubble::before { content: ''; position: absolute; bottom: -13px; left: 50%; transform: translateX(-50%); border-width: 11px 11px 0; border-style: solid; border-color: #4A4A4A transparent; }
+
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+        @media (min-width: 600px) { #pet-container { font-size: 85px; } }
     </style>
 </head>
 <body>
 
-    <div id="pet-container"> (๑>◡<๑) </div>
+    <div id="msg-bubble"></div>
+    <div id="pet-container" onclick="touchPet()"> (๑>◡<๑) </div>
     
     <div class="stats">
         <div class="bar-label"><span>肚子饱饱度</span><span id="h-val">--%</span></div>
         <div class="bar-bg"><div id="h-fill" class="bar-fill"></div></div>
-        
         <div class="bar-label"><span>开心能量</span><span id="s-val">--%</span></div>
         <div class="bar-bg"><div id="s-fill" class="bar-fill"></div></div>
     </div>
@@ -72,7 +82,7 @@
     </div>
 
     <div class="tips">
-        <div id="log-content">连接中...</div>
+        <div id="log-content" style="font-weight: bold; color: #666; margin-bottom: 5px;">连接中...</div>
         <div style="font-size: 9px; opacity: 0.7;">全球累计喂食：<span id="f-count">0</span> 次</div>
     </div>
 
@@ -94,15 +104,32 @@
         const logRef = ref(db, 'kids_logs');
 
         let audioCtx;
+        const riddles = [
+            "什么布剪不断？(答：瀑布)",
+            "什么米不能吃？(答：虾米)",
+            "什么球不能踢？(答：地球)",
+            "云的爸爸是谁？(答：‘月’，因为云升‘月’就落)",
+            "为什么北极熊不吃企鹅？(答：一个在北极一个在南极)",
+            "哪种马从不走路？(答：海马)",
+            "什么人天天戴帽子？(答：稻草人)",
+            "早晨醒来第一件事是什么？(答：睁开眼睛)",
+            "小明的爸爸有三个儿子，大毛、二毛，老三叫？(答：小明)",
+            "森林里谁最快？(答：梅花鹿，因为它有梅花‘路’)"
+        ];
+
         function playSound(type) {
             if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
             const osc = audioCtx.createOscillator();
             const gain = audioCtx.createGain();
             osc.connect(gain); gain.connect(audioCtx.destination);
             const now = audioCtx.currentTime;
+            
             if (type === 'feed') {
                 osc.type = 'sine'; osc.frequency.setValueAtTime(600, now);
                 osc.frequency.exponentialRampToValueAtTime(200, now + 0.2);
+            } else if (type === 'biu') {
+                osc.type = 'sine'; osc.frequency.setValueAtTime(800, now);
+                osc.frequency.exponentialRampToValueAtTime(1200, now + 0.1);
             } else {
                 osc.type = 'triangle'; osc.frequency.setValueAtTime(300, now);
                 osc.frequency.exponentialRampToValueAtTime(800, now + 0.15);
@@ -112,22 +139,53 @@
             osc.start(); osc.stop(now + 0.2);
         }
 
-        function getPetEmoji(data) {
+        // --- 摸摸头功能 ---
+        window.touchPet = () => {
+            const el = document.getElementById('pet-container');
+            const bubble = document.getElementById('msg-bubble');
             const hour = new Date().getHours();
-            if (hour >= 21 || hour < 7) return "(∪｡∪)｡｡｡zzz"; 
-            if (data.h > 80) return "(๑>﹏<๑)"; // 稍微改短一点，防止溢出
-            if (data.s < 30) return "(•̯́ ₃ •̯̀)"; 
-            return "(๑>◡<๑)"; 
-        }
+            
+            el.classList.add('active');
+            setTimeout(() => el.classList.remove('active'), 500);
+            playSound('biu');
+
+            // 8点-9点 触发脑筋急转弯
+            if (hour === 20) {
+                const r = riddles[Math.floor(Math.random() * riddles.length)];
+                bubble.innerText = "💡 " + r;
+                bubble.style.display = 'block';
+                setTimeout(() => bubble.style.display = 'none', 5000);
+            } else {
+                // 平时点击害羞脸
+                const oldText = el.innerText;
+                el.innerText = "(๑>◡<๑) ⁄"; 
+                setTimeout(() => el.innerText = oldText, 800);
+            }
+        };
 
         onValue(petRef, (snapshot) => {
             const data = snapshot.val() || { h: 50, s: 50, f: 0 };
+            const count = data.f || 0;
+            
+            // --- 整百彩蛋：改变背景颜色 ---
+            if (count > 0 && count % 100 === 0) {
+                document.body.style.background = "#D5F5E3"; // 变绿色派对
+            } else {
+                document.body.style.background = "#FFF9E3";
+            }
+
             document.getElementById('h-fill').style.width = (100 - data.h) + '%';
             document.getElementById('s-fill').style.width = data.s + '%';
             document.getElementById('h-val').innerText = Math.floor(100 - data.h) + '%';
             document.getElementById('s-val').innerText = Math.floor(data.s) + '%';
-            document.getElementById('f-count').innerText = data.f || 0;
-            document.getElementById('pet-container').innerText = getPetEmoji(data);
+            document.getElementById('f-count').innerText = count;
+            
+            const hour = new Date().getHours();
+            let emoji = "(๑>◡<๑)";
+            if (hour >= 21 || hour < 7) emoji = "(∪｡∪)｡｡｡zzz"; 
+            else if (data.h > 80) emoji = "(๑>﹏<๑)"; 
+            else if (data.s < 30) emoji = "(•̯́ ₃ •̯̀)";
+            document.getElementById('pet-container').innerText = emoji;
         });
 
         const recentLogQuery = query(logRef, limitToLast(1));
