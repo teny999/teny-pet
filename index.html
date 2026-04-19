@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Teny 2.5 | 魔法互动版</title>
+    <title>Teny 2.7 | 准时奇遇版</title>
     <style>
         :root { --bg: #FFF9E3; --text: #4A4A4A; --bar-bg: #E0DCC8; --accent: #FF8E8E; }
         body { 
@@ -11,19 +11,17 @@
             font-family: "PingFang SC", sans-serif;
             display: flex; flex-direction: column; align-items: center; justify-content: center; 
             height: 100vh; margin: 0; padding: 0 15px; box-sizing: border-box; overflow: hidden;
-            transition: background 0.5s ease; /* 背景变色平滑过渡 */
+            transition: background 0.4s ease;
         }
         
-        /* 基础呼吸动画 */
         @keyframes breathe {
             0%, 100% { transform: translateY(0) scale(1); }
             50% { transform: translateY(-10px) scale(1.02); }
         }
-        /* 点击后的跳动动画 */
         @keyframes bounce {
             0%, 100% { transform: scale(1); }
-            30% { transform: scale(0.9) translateY(10px); }
-            60% { transform: scale(1.2) translateY(-30px); }
+            30% { transform: scale(0.8) translateY(10px); }
+            60% { transform: scale(1.1) translateY(-25px); }
         }
 
         #pet-container { 
@@ -31,9 +29,9 @@
             display: flex; align-items: center; justify-content: center;
             animation: breathe 3s infinite ease-in-out;
             user-select: none; white-space: nowrap; cursor: pointer;
-            -webkit-tap-highlight-color: transparent;
+            -webkit-tap-highlight-color: transparent; z-index: 10;
         }
-        #pet-container.active { animation: bounce 0.5s ease; }
+        #pet-container.active { animation: bounce 0.4s ease; }
 
         .stats { width: 100%; max-width: 280px; margin-top: 5px; }
         .bar-label { font-size: 12px; font-weight: bold; margin-bottom: 5px; display: flex; justify-content: space-between; color: #8C8465; }
@@ -52,15 +50,17 @@
         button.play-btn { background: #6BCB77; }
         button:active { transform: translateY(3px); box-shadow: 0 2px 0 #4A4A4A; }
 
-        .tips { margin-top: 25px; font-size: 11px; color: #A8A28E; text-align: center; min-height: 50px; }
+        .tips { margin-top: 25px; font-size: 11px; color: #A8A28E; text-align: center; min-height: 50px; width: 100%; }
+        
         #msg-bubble { 
-            background: white; border: 2px solid #4A4A4A; padding: 5px 10px; border-radius: 10px;
-            display: none; margin-bottom: 10px; position: relative; animation: fadeIn 0.3s;
+            background: white; border: 2px solid #4A4A4A; padding: 10px 15px; border-radius: 15px;
+            display: none; margin-bottom: 15px; position: relative; animation: fadeIn 0.3s;
+            font-size: 13px; font-weight: bold; color: #333; line-height: 1.5;
+            max-width: 80%; box-shadow: 4px 4px 0px rgba(0,0,0,0.05);
         }
         #msg-bubble::after { content: ''; position: absolute; bottom: -10px; left: 50%; transform: translateX(-50%); border-width: 10px 10px 0; border-style: solid; border-color: white transparent; }
-        #msg-bubble::before { content: ''; position: absolute; bottom: -13px; left: 50%; transform: translateX(-50%); border-width: 11px 11px 0; border-style: solid; border-color: #4A4A4A transparent; }
-
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+        
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
         @media (min-width: 600px) { #pet-container { font-size: 85px; } }
     </style>
 </head>
@@ -105,15 +105,9 @@
 
         let audioCtx;
         const riddles = [
-            "什么布剪不断？(答：瀑布)",
-            "什么米不能吃？(答：虾米)",
-            "什么球不能踢？(答：地球)",
-            "云的爸爸是谁？(答：‘月’，因为云升‘月’就落)",
-            "为什么北极熊不吃企鹅？(答：一个在北极一个在南极)",
-            "哪种马从不走路？(答：海马)",
-            "什么人天天戴帽子？(答：稻草人)",
-            "早晨醒来第一件事是什么？(答：睁开眼睛)",
-            "小明的爸爸有三个儿子，大毛、二毛，老三叫？(答：小明)",
+            "什么布剪不断？(答：瀑布)", "什么米不能吃？(答：虾米)", "什么球不能踢？(答：地球)",
+            "云的爸爸是谁？(答：‘月’)", "哪种马从不走路？(答：海马)", "什么人天天戴帽子？(答：稻草人)",
+            "早晨醒来第一件事是什么？(答：睁开眼睛)", "什么牛不会吃草？(答：蜗牛)", "什么水永远用不完？(答：泪水)",
             "森林里谁最快？(答：梅花鹿，因为它有梅花‘路’)"
         ];
 
@@ -128,57 +122,57 @@
                 osc.type = 'sine'; osc.frequency.setValueAtTime(600, now);
                 osc.frequency.exponentialRampToValueAtTime(200, now + 0.2);
             } else if (type === 'biu') {
-                osc.type = 'sine'; osc.frequency.setValueAtTime(800, now);
-                osc.frequency.exponentialRampToValueAtTime(1200, now + 0.1);
+                osc.type = 'sine'; osc.frequency.setValueAtTime(700, now);
+                osc.frequency.exponentialRampToValueAtTime(1100, now + 0.1);
             } else {
                 osc.type = 'triangle'; osc.frequency.setValueAtTime(300, now);
                 osc.frequency.exponentialRampToValueAtTime(800, now + 0.15);
             }
-            gain.gain.setValueAtTime(0.15, now);
+            gain.gain.setValueAtTime(0.1, now);
             gain.gain.exponentialRampToValueAtTime(0.01, now + 0.2);
             osc.start(); osc.stop(now + 0.2);
         }
 
-        // --- 摸摸头功能 ---
         window.touchPet = () => {
             const el = document.getElementById('pet-container');
             const bubble = document.getElementById('msg-bubble');
-            const hour = new Date().getHours();
+            const now = new Date();
+            const h = now.getHours();
+            const m = now.getMinutes();
             
             el.classList.add('active');
-            setTimeout(() => el.classList.remove('active'), 500);
+            setTimeout(() => el.classList.remove('active'), 400);
             playSound('biu');
 
-            // 8点-9点 触发脑筋急转弯
-            if (hour === 20) {
+            document.body.style.background = "#FFD1D1"; 
+            setTimeout(() => { document.body.style.background = "#FFF9E3"; }, 300);
+
+            // --- 核心逻辑：整点前后5分钟区间 ---
+            // 检查逻辑：
+            // 1. 如果当前是偶数小时，且分钟 <= 5 (例如 10:00 - 10:05)
+            // 2. 如果当前是奇数小时，且分钟 >= 55 (例如 09:55 - 09:59，对应 10:00 的前 5 分钟)
+            const isNearEvenHour = (h % 2 === 0 && m <= 5) || ((h + 1) % 2 === 0 && m >= 55);
+
+            if (isNearEvenHour) {
+                const targetHour = (m >= 55) ? (h + 1) % 24 : h;
                 const r = riddles[Math.floor(Math.random() * riddles.length)];
-                bubble.innerText = "💡 " + r;
+                bubble.innerText = `🌟 发现 ${targetHour}点 奇遇时间！\nTeny 考考你：${r}`;
                 bubble.style.display = 'block';
-                setTimeout(() => bubble.style.display = 'none', 5000);
+                setTimeout(() => bubble.style.display = 'none', 8000); 
             } else {
-                // 平时点击害羞脸
                 const oldText = el.innerText;
                 el.innerText = "(๑>◡<๑) ⁄"; 
-                setTimeout(() => el.innerText = oldText, 800);
+                setTimeout(() => { /* 恢复表情由监听器处理 */ }, 800);
             }
         };
 
         onValue(petRef, (snapshot) => {
             const data = snapshot.val() || { h: 50, s: 50, f: 0 };
-            const count = data.f || 0;
-            
-            // --- 整百彩蛋：改变背景颜色 ---
-            if (count > 0 && count % 100 === 0) {
-                document.body.style.background = "#D5F5E3"; // 变绿色派对
-            } else {
-                document.body.style.background = "#FFF9E3";
-            }
-
             document.getElementById('h-fill').style.width = (100 - data.h) + '%';
             document.getElementById('s-fill').style.width = data.s + '%';
             document.getElementById('h-val').innerText = Math.floor(100 - data.h) + '%';
             document.getElementById('s-val').innerText = Math.floor(data.s) + '%';
-            document.getElementById('f-count').innerText = count;
+            document.getElementById('f-count').innerText = data.f || 0;
             
             const hour = new Date().getHours();
             let emoji = "(๑>◡<๑)";
