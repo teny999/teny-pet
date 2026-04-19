@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Teny 2.7 | 准时奇遇版</title>
+    <title>Teny 2.8 | 智力闯关版</title>
     <style>
         :root { --bg: #FFF9E3; --text: #4A4A4A; --bar-bg: #E0DCC8; --accent: #FF8E8E; }
         body { 
@@ -50,15 +50,21 @@
         button.play-btn { background: #6BCB77; }
         button:active { transform: translateY(3px); box-shadow: 0 2px 0 #4A4A4A; }
 
-        .tips { margin-top: 25px; font-size: 11px; color: #A8A28E; text-align: center; min-height: 50px; width: 100%; }
-        
+        /* 气泡对话框升级 */
         #msg-bubble { 
-            background: white; border: 2px solid #4A4A4A; padding: 10px 15px; border-radius: 15px;
+            background: white; border: 2px solid #4A4A4A; padding: 15px; border-radius: 15px;
             display: none; margin-bottom: 15px; position: relative; animation: fadeIn 0.3s;
-            font-size: 13px; font-weight: bold; color: #333; line-height: 1.5;
-            max-width: 80%; box-shadow: 4px 4px 0px rgba(0,0,0,0.05);
+            font-size: 14px; font-weight: bold; color: #333; line-height: 1.6;
+            max-width: 85%; box-shadow: 4px 4px 0px rgba(0,0,0,0.05); text-align: center;
         }
         #msg-bubble::after { content: ''; position: absolute; bottom: -10px; left: 50%; transform: translateX(-50%); border-width: 10px 10px 0; border-style: solid; border-color: white transparent; }
+        
+        .bubble-btns { display: flex; gap: 10px; justify-content: center; margin-top: 10px; }
+        .bubble-btns button { 
+            padding: 5px 15px; font-size: 12px; flex: none; box-shadow: 0 3px 0 #4A4A4A;
+        }
+
+        .tips { margin-top: 25px; font-size: 11px; color: #A8A28E; text-align: center; min-height: 50px; width: 100%; }
         
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
         @media (min-width: 600px) { #pet-container { font-size: 85px; } }
@@ -66,7 +72,14 @@
 </head>
 <body>
 
-    <div id="msg-bubble"></div>
+    <div id="msg-bubble">
+        <div id="riddle-text"></div>
+        <div class="bubble-btns" id="riddle-ops">
+            <button onclick="answerRiddle('yes')" style="background: #6BCB77;">我会！</button>
+            <button onclick="answerRiddle('no')" style="background: #FFAB76;">不会...</button>
+        </div>
+    </div>
+
     <div id="pet-container" onclick="touchPet()"> (๑>◡<๑) </div>
     
     <div class="stats">
@@ -103,12 +116,29 @@
         const petRef = ref(db, 'kids_pet'); 
         const logRef = ref(db, 'kids_logs');
 
-        let audioCtx;
+        let audioCtx, currentRiddle = null;
+
         const riddles = [
-            "什么布剪不断？(答：瀑布)", "什么米不能吃？(答：虾米)", "什么球不能踢？(答：地球)",
-            "云的爸爸是谁？(答：‘月’)", "哪种马从不走路？(答：海马)", "什么人天天戴帽子？(答：稻草人)",
-            "早晨醒来第一件事是什么？(答：睁开眼睛)", "什么牛不会吃草？(答：蜗牛)", "什么水永远用不完？(答：泪水)",
-            "森林里谁最快？(答：梅花鹿，因为它有梅花‘路’)"
+            { q: "什么布剪不断？", a: "瀑布" },
+            { q: "什么米不能吃？", a: "虾米" },
+            { q: "什么球不能踢？", a: "地球" },
+            { q: "云的爸爸是谁？", a: "月" },
+            { q: "哪种马从不走路？", a: "海马" },
+            { q: "什么人天天戴帽子？", a: "稻草人" },
+            { q: "什么牛不会吃草？", a: "蜗牛" },
+            { q: "什么书你买不到？", a: "遗书" },
+            { q: "什么水永远用不完？", a: "泪水" },
+            { q: "森林里谁最快？", a: "梅花鹿" },
+            { q: "黑鸡厉害还是白鸡厉害？", a: "黑鸡" }, // 因为黑鸡会下白蛋，白鸡不会下黑蛋
+            { q: "什么门永远关不上？", a: "球门" },
+            { q: "什么路不能走？", a: "电路" },
+            { q: "什么鱼不能吃？", a: "木鱼" },
+            { q: "为什么企鹅只有肚子是白的？", a: "手短够不着背" },
+            { q: "什么蛋打不碎，也煮不熟？", a: "顽固不化" }, // 或者考试0分：脸蛋
+            { q: "什么瓜不能吃？", a: "傻瓜" },
+            { q: "冬瓜、黄瓜、西瓜、南瓜都能吃，什么瓜不能吃？", a: "傻瓜" },
+            { q: "医生给了你三颗药，要你半小时吃一颗，请问吃完需要多久？", a: "一小时" },
+            { q: "老李有一只猫，这只猫从来不捉老鼠，这是为什么？", a: "瞎猫" } // 瞎猫碰到死老鼠
         ];
 
         function playSound(type) {
@@ -147,23 +177,40 @@
             document.body.style.background = "#FFD1D1"; 
             setTimeout(() => { document.body.style.background = "#FFF9E3"; }, 300);
 
-            // --- 核心逻辑：整点前后5分钟区间 ---
-            // 检查逻辑：
-            // 1. 如果当前是偶数小时，且分钟 <= 5 (例如 10:00 - 10:05)
-            // 2. 如果当前是奇数小时，且分钟 >= 55 (例如 09:55 - 09:59，对应 10:00 的前 5 分钟)
+            // 偶数整点前后5分钟
             const isNearEvenHour = (h % 2 === 0 && m <= 5) || ((h + 1) % 2 === 0 && m >= 55);
 
-            if (isNearEvenHour) {
-                const targetHour = (m >= 55) ? (h + 1) % 24 : h;
-                const r = riddles[Math.floor(Math.random() * riddles.length)];
-                bubble.innerText = `🌟 发现 ${targetHour}点 奇遇时间！\nTeny 考考你：${r}`;
+            if (isNearEvenHour && bubble.style.display !== 'block') {
+                currentRiddle = riddles[Math.floor(Math.random() * riddles.length)];
+                document.getElementById('riddle-text').innerText = `⏰ 奇遇时间到！Teny 考考你：\n\n“${currentRiddle.q}”`;
+                document.getElementById('riddle-ops').style.display = 'flex';
                 bubble.style.display = 'block';
-                setTimeout(() => bubble.style.display = 'none', 8000); 
-            } else {
+            } else if (bubble.style.display !== 'block') {
                 const oldText = el.innerText;
                 el.innerText = "(๑>◡<๑) ⁄"; 
-                setTimeout(() => { /* 恢复表情由监听器处理 */ }, 800);
+                setTimeout(() => { /* 自动刷新表情 */ }, 800);
             }
+        };
+
+        window.answerRiddle = (choice) => {
+            const text = document.getElementById('riddle-text');
+            const ops = document.getElementById('riddle-ops');
+            
+            if (choice === 'yes') {
+                const userAns = prompt("快输入你的答案吧：");
+                if (userAns && (userAns.includes(currentRiddle.a) || currentRiddle.a.includes(userAns))) {
+                    text.innerText = `🎊 太棒啦！你答对了！\n答案就是：${currentRiddle.a}\nTeny 觉得你超级聪明！`;
+                } else {
+                    text.innerText = `😜 哎呀，差点就对啦！\n再仔细想想？或者点“不会”看答案~`;
+                }
+            } else {
+                text.innerText = `💡 没关系，Teny 告诉你：\n答案是：${currentRiddle.a}\n下次一定难不倒你！`;
+            }
+            
+            ops.style.display = 'none';
+            setTimeout(() => {
+                document.getElementById('msg-bubble').style.display = 'none';
+            }, 5000);
         };
 
         onValue(petRef, (snapshot) => {
@@ -182,6 +229,7 @@
             document.getElementById('pet-container').innerText = emoji;
         });
 
+        // 基础逻辑保持不变...
         const recentLogQuery = query(logRef, limitToLast(1));
         onValue(recentLogQuery, (snapshot) => {
             snapshot.forEach((child) => {
@@ -198,7 +246,6 @@
                 const cityData = await res.json();
                 location = cityData.city || "神秘城市";
             } catch (e) {}
-
             runTransaction(petRef, (curr) => {
                 if (!curr) curr = { h: 50, s: 50, f: 0 };
                 if (type === 'feed') { curr.h = Math.max(0, curr.h - 15); curr.f++; }
